@@ -6,10 +6,8 @@ from bcc import BPF
 from netaddr import IPAddress,AddrFormatError
 from socket import htons,htonl
 
-class KeyIPv4(ct.Structure):
-    _fields_ = [("addr", ct.c_uint32)]
-
-in6_addr = ct.c_uint16 * 8
+be32_addr = ct.c_uint32     # IPv4 addr
+in6_addr = ct.c_uint16 * 8  # IPv6 addr
 
 def bpf_blacklist_insert(bpf, ip_str):
     try:
@@ -20,7 +18,7 @@ def bpf_blacklist_insert(bpf, ip_str):
     # htons/htonl: use network byte order within kernel
     if ip.version == 4:
         blacklist = bpf["ipv4_blacklist"]
-        key = KeyIPv4(htonl(ip.value))
+        key = be32_addr(htonl(ip.value))
     elif ip.version == 6:
         blacklist = bpf["ipv6_blacklist"]
         ip_htons = [htons(w) for w in ip.words]

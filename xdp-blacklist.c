@@ -7,18 +7,12 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-struct ipv4_key {
-	u32 addr;
-};
-
-BPF_HASH(ipv4_blacklist, struct ipv4_key);
+BPF_HASH(ipv4_blacklist, __be32);
 BPF_HASH(ipv6_blacklist, struct in6_addr);
 
-static int ipv4_is_blacklisted(u32 addr)
+static int ipv4_is_blacklisted(__be32 *addr)
 {
-	struct ipv4_key key = { addr };
-
-	if (ipv4_blacklist.lookup(&key))
+	if (ipv4_blacklist.lookup(addr))
 	    return 1;
 
 	return 0;
@@ -77,7 +71,7 @@ int xdp_main(struct xdp_md *ctx)
 		if (!iphdr)
 			goto xdp_pass;
 
-		if (ipv4_is_blacklisted(iphdr->saddr)) {
+		if (ipv4_is_blacklisted(&iphdr->saddr)) {
 			bpf_trace_printk("ip in blacklist: DROP\n");
 			return XDP_DROP;
 		}
