@@ -4,11 +4,12 @@ import argparse
 import ctypes as ct
 from bcc import BPF
 from netaddr import IPAddress,AddrFormatError
-from socket import htonl
+from socket import htons,htonl
 
 class KeyIPv4(ct.Structure):
     _fields_ = [("addr", ct.c_uint32)]
 
+in6_addr = ct.c_uint16 * 8
 
 def bpf_blacklist_insert(bpf, ip_str):
     try:
@@ -16,11 +17,14 @@ def bpf_blacklist_insert(bpf, ip_str):
     except AddrFormatError:
         raise ValueError("{} is not a valid IP address".format(ip_str))
 
+    # htons/htonl: use network byte order within kernel
     if ip.version == 4:
         blacklist = bpf["ipv4_blacklist"]
         key = KeyIPv4(htonl(ip.value))
     elif ip.version == 6:
-        raise ValueError("IPv6 not implemented")
+        blacklist = bpf["ipv6_blacklist"]
+        ip_htons = [htons(w) for w in ip.words]
+        key = in6_addr(*ip_htons)
 
     try:
         blacklist[key] = ct.c_uint64(0)
