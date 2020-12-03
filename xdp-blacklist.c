@@ -7,8 +7,14 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-BPF_HASH(ipv4_blacklist, __be32);
-BPF_HASH(ipv6_blacklist, struct in6_addr);
+#define BPF_HASH_DEFAULT_SIZE 10240
+
+#ifndef BPF_HASH_SIZE
+#define BPF_HASH_SIZE BPF_HASH_DEFAULT_SIZE
+#endif
+
+BPF_HASH(ipv4_blacklist, __be32, u64, BPF_HASH_SIZE);
+BPF_HASH(ipv6_blacklist, struct in6_addr, u64);
 
 static int ipv4_is_blacklisted(__be32 *addr)
 {

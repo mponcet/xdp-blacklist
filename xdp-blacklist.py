@@ -34,11 +34,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("interface", type=str, help="Attach XDP program to given interface")
     parser.add_argument("blocklist", help="Load blocklist from given file")
+    parser.add_argument("--hashtable-size", type=int, default=65535, help="Set BPF_HASH table size")
     args = parser.parse_args()
     interface = args.interface
     blocklist = args.blocklist
+    hashtable_size = args.hashtable_size
 
-    bpf = BPF(src_file="xdp-blacklist.c")
+    bpf = BPF(src_file="xdp-blacklist.c",
+              cflags=["-DBPF_HASH_SIZE={}".format(hashtable_size)])
 
     with open(blocklist, "r") as f:
         lines = f.readlines()
